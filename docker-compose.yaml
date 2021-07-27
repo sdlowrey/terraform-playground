@@ -1,0 +1,12 @@
+version: "3"
+
+services:
+  terraform:
+    build: .
+    volumes:
+      - .:/terraform
+      - ~/.aws:/root/.aws
+      - ~/.ssh:/root/.ssh
+    environment:
+      - AWS_DEFAULT_REGION=us-east-2
+      - AWS_PROFILE=dev
