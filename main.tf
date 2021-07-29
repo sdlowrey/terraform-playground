@@ -1,3 +1,13 @@
+terraform {
+  backend "s3" {
+    bucket = "wintershine-tf-state"
+    key = "global/s3/terraform.tfstate"
+    region = "us-east-2"
+    dynamodb_table = "wintershine-tf-locks"
+    encrypt = true
+  }
+}
+
 provider "aws" {
   region = "us-east-2"
 }

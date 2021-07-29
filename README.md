@@ -12,7 +12,15 @@ To build/run the Terraform container:
 
 If you need to rebuild the container, run `docker-compose build` or `docker-compose up --build`.
 
-# Deploying
+# Deploying the Terraform backend
+
+```shell
+cd tf-backend
+# modify bucket and ddb table name as needed...
+terraform init
+terraform apply
+```
+# Deploying the web server ASG configuration
 
 Define an AWS profile in `~/.aws`, then use it to deploy.
 
