@@ -1,32 +1,15 @@
 terraform {
   backend "s3" {
-    bucket = "wintershine-tf-state"
-    key = "global/s3/terraform.tfstate"
-    region = "us-east-2"
+    bucket         = "wintershine-tf-state"
+    key            = "stage/services/web-cluster/terraform.tfstate"
+    region         = "us-east-2"
     dynamodb_table = "wintershine-tf-locks"
-    encrypt = true
+    encrypt        = true
   }
 }
 
 provider "aws" {
   region = "us-east-2"
-}
-
-variable "image_id" {
-  description = "The web server AMI - defaults to Ubuntu 18.04 "
-  type        = string
-  default     = "ami-0c55b159cbfafe1f0"
-}
-
-variable "server_port" {
-  description = "The web server port"
-  type        = number
-  default     = 8080
-}
-
-variable "ingress_address" {
-  description = "The IP address that will access the web server"
-  type        = string
 }
 
 data "aws_availability_zones" "available_zones" {
@@ -39,6 +22,24 @@ data "aws_vpc" "default" {
 
 data "aws_subnet_ids" "default_vpc" {
   vpc_id = data.aws_vpc.default.id
+}
+
+data "terraform_remote_state" "db" {
+  backend = "s3"
+  config = {
+    bucket = "wintershine-tf-state"
+    key    = "stage/data-stores/mysql/terraform.tfstate"
+    region = "us-east-2"
+  }
+}
+
+data template_file "user_data" {
+  template = file("user-data.sh")
+  vars = {
+    server_port = var.server_port
+    db_address  = data.terraform_remote_state.db.outputs.address
+    db_port     = data.terraform_remote_state.db.outputs.port
+  }
 }
 
 resource "aws_security_group" "allow_http" {
@@ -79,7 +80,7 @@ resource "aws_launch_template" "example" {
     }
   }
 
-  user_data = base64encode("#!/bin/bash\necho hello > index.html\nnohup busybox httpd -f -p ${var.server_port} &")
+  user_data = base64encode(data.template_file.user_data.rendered)
 
   lifecycle {
     create_before_destroy = true
@@ -174,8 +175,4 @@ resource "aws_lb_target_group" "example" {
     healthy_threshold   = 3
     unhealthy_threshold = 2
   }
-}
-
-output "alb_dns_name" {
-  value = aws_lb.example.dns_name
 }
