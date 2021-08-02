@@ -1,7 +1,3 @@
-provider "aws" {
-  region = "us-east-2"
-}
-
 terraform {
   backend "s3" {
     bucket         = "wintershine-tf-state"
@@ -12,17 +8,11 @@ terraform {
   }
 }
 
-data "aws_secretsmanager_secret_version" "db_password" {
-  secret_id = "mysql-master-password-stage"
-}
+module "mysql_db" {
+  source = "../../../modules/data-stores/mysql"
 
-resource "aws_db_instance" "example" {
-  identifier_prefix   = "tf-example"
-  engine              = "mysql"
-  allocated_storage   = 10
-  instance_class      = "db.t2.micro"
-  skip_final_snapshot = true
-  name                = "example"
-  username            = "admin"
-  password            = jsondecode(data.aws_secretsmanager_secret_version.db_password.secret_string)["admin"]
+  identifier_prefix = "tf-example"
+  name = "example"
+  db_instance_class = "db.t2.micro"
+  allocated_storage = 10
 }

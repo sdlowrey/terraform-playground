@@ -1,7 +1,7 @@
 output "address" {
-  value = aws_db_instance.example.address
+  value = module.mysql_db.address
 }
 
 output "port" {
-  value = aws_db_instance.example.port
+  value = module.mysql_db.port
 }
